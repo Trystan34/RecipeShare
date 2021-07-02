@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using HotChocolate;
 
 namespace RecipeShare.Models
 {
@@ -20,6 +21,7 @@ namespace RecipeShare.Models
         public string AllergyInformation { get; set; }
         public double Rating { get; set; }
         public int PreparationTime { get; set; }
+        [GraphQLDescription("The time it takes to cook the recipe.")]
         public int CookTime { get; set; }
         public double Serves { get; set; }
         public string ImageUrl { get; set; }
