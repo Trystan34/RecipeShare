@@ -21,6 +21,9 @@ namespace RecipeShare
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                });
+                })
+                // TODO Is this required for Docker ENV variables to be injected?
+                .ConfigureAppConfiguration(configurationBuilder => { configurationBuilder.AddEnvironmentVariables(); })
+                ;
     }
 }

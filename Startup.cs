@@ -31,9 +31,21 @@ namespace RecipeShare
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var db_server = Environment.GetEnvironmentVariable("DB_SERVER");
+            var db_name = Environment.GetEnvironmentVariable("DB_NAME");
+            var db_user = Environment.GetEnvironmentVariable("DB_USER");
+            var db_password = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
+            var connection = $"Server={db_server};Database={db_name};User={db_user};Password={db_password};";
+
             services.AddPooledDbContextFactory<AppDbContext>(options => options
-                .UseSqlServer(Configuration.GetConnectionString("DefaultConnection"))
+                .UseSqlServer(connection)
                 .EnableServiceProviderCaching(false), poolSize: 32);
+
+            // ! Use this when not using Docker.
+            // services.AddPooledDbContextFactory<AppDbContext>(options => options
+            //     .UseSqlServer(Configuration.GetConnectionString("DefaultConnection"))
+            //     .EnableServiceProviderCaching(false), poolSize: 32);
 
             services.AddGraphQLServer()
                     .AddQueryType<Query>()

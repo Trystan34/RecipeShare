@@ -14,5 +14,9 @@ namespace RecipeShare.GraphQL
             Console.WriteLine($"Recipe added: {recipe.Name}");
             return recipe;
         }
+
+        [Subscribe]
+        [Topic]
+        public RecipeCategory OnRecipeCategoryAdded([EventMessage] RecipeCategory recipeCategory) => recipeCategory;
     }
 }

@@ -5,6 +5,7 @@ using HotChocolate;
 using HotChocolate.Data;
 using HotChocolate.Subscriptions;
 using RecipeShare.Models;
+using static RecipeShare.GraphQL.Types.RecipeCategoryType;
 using static RecipeShare.GraphQL.Types.RecipeType;
 
 namespace RecipeShare.GraphQL
@@ -33,6 +34,28 @@ namespace RecipeShare.GraphQL
             await eventSender.SendAsync(nameof(Subscription.OnRecipeAdded), recipe, cancellationToken);
 
             return new AddRecipePayload(recipe);
+        }
+
+        [UseDbContext(typeof(AppDbContext))]
+        public async Task<AddRecipeCategoryPayload> AddRecipeCategoryAsync(
+            AddRecipeCategoryInput input,
+            [ScopedService] AppDbContext context,
+            [Service] ITopicEventSender eventSender,
+            CancellationToken cancellationToken)
+        {
+            var recipeCategory = new RecipeCategory
+            {
+                CategoryId = new Guid(),
+                CategoryName = input.name,
+                Description = input.description
+            };
+
+            context.RecipeCategories.Add(recipeCategory);
+            await context.SaveChangesAsync(cancellationToken);
+
+            await eventSender.SendAsync(nameof(Subscription.OnRecipeCategoryAdded), recipeCategory, cancellationToken);
+
+            return new AddRecipeCategoryPayload(recipeCategory);
         }
     }
 }

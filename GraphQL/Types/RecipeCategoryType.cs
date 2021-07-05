@@ -8,6 +8,8 @@ namespace RecipeShare.GraphQL.Types
 {
     public class RecipeCategoryType : ObjectType<RecipeCategory>
     {
+        public record AddRecipeCategoryPayload(RecipeCategory recipeCategory);
+        public record AddRecipeCategoryInput(string name, string description = "");
         // Since we are inheriting from ObjectType we need to override the functionality
         protected override void Configure(IObjectTypeDescriptor<RecipeCategory> descriptor)
         {
