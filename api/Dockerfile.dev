@@ -1,0 +1,9 @@
+FROM mcr.microsoft.com/dotnet/sdk:5.0
+
+LABEL maintainer="lance.donnell@datacom.co.nz"
+
+WORKDIR /app
+
+EXPOSE 80
+EXPOSE 443
+ENTRYPOINT ["/bin/bash", "-c", "dotnet watch --project . run --urls 'http://0.0.0.0:80'"]
