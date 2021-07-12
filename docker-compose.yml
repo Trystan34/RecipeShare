@@ -1,0 +1,60 @@
+# Instructions
+# Place this file in directory above recipe-share repo
+# Create .env file and define the following variables:
+
+# ASPNETCORE_ENVIRONMENT
+# DOTNET_USE_POLLING_FILE_WATCHER
+# DB_SERVER
+# DB_NAME
+# DB_USER
+# DB_PASSWORD
+
+# From same directory as docker-compose.yml file run:
+# docker-compose up --build
+
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./recipe-share/api/Dockerfile.dev
+    depends_on: [db]
+    volumes:
+      - ./recipe-share/api:/app
+    ports:
+      - "8080:80"
+    networks:
+      - recipe-share-network
+    env_file:
+      - .env
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      SA_PASSWORD: ${DB_PASSWORD}
+      ACCEPT_EULA: "Y"
+    ports:
+      - 1433:1433
+    volumes:
+      - db_data:/var/opt/mssql
+    restart: always
+    env_file:
+      - .env
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Example_123 -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 10s
+      retries: 10
+      start_period: 10s
+      timeout: 3s
+    networks:
+      - recipe-share-network
+
+volumes:
+  db_data: {}
+
+networks:
+  recipe-share-network:
+    driver: bridge
