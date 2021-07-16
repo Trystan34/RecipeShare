@@ -1,34 +1,25 @@
 using System;
-using System.Linq;
-using HotChocolate;
-using HotChocolate.Types;
-using RecipeShare.Models;
+using api.Interfaces;
+using api.Models;
+using GraphQL.Types;
 
-namespace RecipeShare.GraphQL.Types
+namespace api.GraphQL.Types
 {
-    public class RecipeType : ObjectType<Recipe>
+    public class RecipeType : ObjectGraphType<Recipe>
     {
-        public record AddRecipePayload(Recipe recipe);
-        // The object used to interact with adding a recipe.
-        public record AddRecipeInput(string name, Guid categoryId);
-
-        protected override void Configure(IObjectTypeDescriptor<Recipe> descriptor)
+        public IServiceProvider Provider { get; set; }
+        public RecipeType(IServiceProvider provider)
         {
-            descriptor.Description("A recipe for food.");
-
-            // Resolve a foreign key
-            descriptor.Field(x => x.CategoryId)
-                      .ResolveWith<Resolvers>(p => p.GetCategory(default!, default!))
-                      .UseDbContext<AppDbContext>()
-                      .Description("This is the category that the recipe belongs to.");
-        }
-
-        private class Resolvers
-        {
-            public RecipeCategory GetCategory(Recipe recipe, [ScopedService] AppDbContext context)
+            Field(x => x.Id, type: typeof(GuidGraphType));
+            Field(x => x.Name, type: typeof(StringGraphType));
+            Field(x => x.CategoryId, type: typeof(GuidGraphType));
+            // The category that this recipe belongs to.
+            Field<RecipeCategoryType>("category", resolve: context =>
             {
-                return context.RecipeCategories.FirstOrDefault(x => x.CategoryId == recipe.CategoryId);
-            }
+                IGenericRepository<RecipeCategory> recipeCategoryRepository = (IGenericRepository<RecipeCategory>)provider.GetService(typeof(IGenericRepository<RecipeCategory>));
+                Guid categoryId = context.Source.CategoryId;
+                return recipeCategoryRepository.GetById(categoryId);
+            });
         }
     }
 }

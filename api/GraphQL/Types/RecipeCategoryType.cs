@@ -1,34 +1,26 @@
 using System;
 using System.Linq;
-using HotChocolate;
-using HotChocolate.Types;
-using RecipeShare.Models;
+using api.Interfaces;
+using api.Models;
+using GraphQL.Types;
 
-namespace RecipeShare.GraphQL.Types
+namespace api.GraphQL.Types
 {
-    public class RecipeCategoryType : ObjectType<RecipeCategory>
+    public class RecipeCategoryType : ObjectGraphType<RecipeCategory>
     {
-        public record AddRecipeCategoryPayload(RecipeCategory recipeCategory);
-        public record AddRecipeCategoryInput(string name, string description = "");
-        // Since we are inheriting from ObjectType we need to override the functionality
-        protected override void Configure(IObjectTypeDescriptor<RecipeCategory> descriptor)
+        public IServiceProvider Provider { get; set; }
+        public RecipeCategoryType(IServiceProvider provider)
         {
-            descriptor.Description("Get all the recipes for a category.");
-
-            // descriptor.Field(x => x.Recipes).Ignore();
-
-            descriptor.Field(x => x.Recipes)
-                        .ResolveWith<Resolvers>(p => p.GetRecipes(default!, default!))
-                        .UseDbContext<AppDbContext>()
-                        .Description("These are all the recipes available for this category.");
-        }
-
-        private class Resolvers
-        {
-            public IQueryable<Recipe> GetRecipes(RecipeCategory recipeCategory, [ScopedService] AppDbContext context)
+            Field(x => x.Id, type: typeof(GuidGraphType));
+            Field(x => x.Name, type: typeof(StringGraphType));
+            Field(x => x.Description, type: typeof(StringGraphType));
+            // The recipes that belong to this category.
+            Field<ListGraphType<RecipeType>>("recipes", resolve: context =>
             {
-                return context.Recipes.Where(x => x.CategoryId == recipeCategory.CategoryId);
-            }
+                IGenericRepository<Recipe> recipeRepository = (IGenericRepository<Recipe>)provider.GetService(typeof(IGenericRepository<Recipe>));
+                Guid currentCategoryId = context.Source.Id;
+                return recipeRepository.GetAll().Where(r => r.CategoryId == currentCategoryId);
+            });
         }
     }
 }

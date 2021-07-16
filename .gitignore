@@ -80,3 +80,5 @@ _[Ss]cripts
 *.Development.json
 .vs
 .vscode
+.env
+*.txt

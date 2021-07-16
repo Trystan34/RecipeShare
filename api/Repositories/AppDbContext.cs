@@ -1,28 +1,38 @@
 using System;
+using api.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace RecipeShare.Models
+namespace api.Repositories
 {
     public class AppDbContext : DbContext
     {
-        public DbSet<RecipeCategory> RecipeCategories { get; set; }
-        public DbSet<Recipe> Recipes { get; set; }
-
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Recipe>(entity =>
+            {
+                entity.Property(e => e.CreationDate).HasDefaultValueSql("(now())");
+                entity.HasIndex(e => e.Name).IsUnique(true);
+            });
+
+            modelBuilder.Entity<RecipeCategory>(entity =>
+            {
+                entity.Property(e => e.CreationDate).HasDefaultValueSql("(now())");
+                entity.HasIndex(e => e.Name).IsUnique(true);
+            });
+
             // Seed categories.
-            modelBuilder.Entity<RecipeCategory>().HasData(new RecipeCategory { CategoryId = new Guid("c32cc263-a7af-4fbd-99a0-aceb57c91f6b"), CategoryName = "Roast" });
-            modelBuilder.Entity<RecipeCategory>().HasData(new RecipeCategory { CategoryId = new Guid("8223c37b-4ca4-4d14-8e9f-027e147e9642"), CategoryName = "Pies" });
-            modelBuilder.Entity<RecipeCategory>().HasData(new RecipeCategory { CategoryId = new Guid("6bc96ff6-a14c-41d9-b3d6-47c51f2e5198"), CategoryName = "Stir fry" });
+            modelBuilder.Entity<RecipeCategory>().HasData(new RecipeCategory { Id = new Guid("c32cc263-a7af-4fbd-99a0-aceb57c91f6b"), Name = "Roast" });
+            modelBuilder.Entity<RecipeCategory>().HasData(new RecipeCategory { Id = new Guid("8223c37b-4ca4-4d14-8e9f-027e147e9642"), Name = "Pies" });
+            modelBuilder.Entity<RecipeCategory>().HasData(new RecipeCategory { Id = new Guid("6bc96ff6-a14c-41d9-b3d6-47c51f2e5198"), Name = "Stir fry" });
 
             // Seed Recipes.
             modelBuilder.Entity<Recipe>().HasData(new Recipe
             {
-                RecipeId = new Guid("e7448fc2-1cbe-48ad-a69e-deda6ca38ddb"),
+                Id = new Guid("e7448fc2-1cbe-48ad-a69e-deda6ca38ddb"),
                 Name = "Roast duck with duck fat potatoes",
                 ShortDescription = "The duck fat makes the potatoes extra crispy.",
                 LongDescription =
@@ -37,7 +47,7 @@ namespace RecipeShare.Models
 
             modelBuilder.Entity<Recipe>().HasData(new Recipe
             {
-                RecipeId = new Guid("78edd685-1b1e-4105-a95f-bfafa2ef05a6"),
+                Id = new Guid("78edd685-1b1e-4105-a95f-bfafa2ef05a6"),
                 Name = "Apple Pie",
                 ShortDescription = "Delicious like grandma made!",
                 LongDescription =
@@ -52,8 +62,6 @@ namespace RecipeShare.Models
                 ImageThumbnailUrl = "https://gillcleerenpluralsight.blob.core.windows.net/files/applepiesmall.jpg",
                 Notes = "My grandma made this."
             });
-
         }
-
     }
 }

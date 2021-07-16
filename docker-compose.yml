@@ -1,0 +1,45 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile.dev
+    depends_on: [db]
+    volumes:
+      - ./api:/app
+    ports:
+      - 8080:80
+    networks:
+      - recipe-share-network
+    env_file:
+      - .env
+  db:
+    image: postgres:13.3-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - /var/lib/postgresql/data
+    networks:
+      - recipe-share-network
+
+  testdb:
+    image: postgres:13.3-alpine
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_TEST_DB}
+    volumes:
+      - /var/lib/postgresql/data
+    networks:
+      - recipe-share-network
+
+networks:
+  recipe-share-network:

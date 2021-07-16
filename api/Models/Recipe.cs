@@ -1,16 +1,12 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using HotChocolate;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace RecipeShare.Models
+namespace api.Models
 {
-    /// <summary>
-    /// The model definition
-    /// </summary>
-    public class Recipe
+    [Table("recipe", Schema = "business")]
+    public partial class Recipe : BaseEntity
     {
-        [Key]
-        public Guid RecipeId { get; set; }
         [Required]
         [StringLength(300)]
         public string Name { get; set; }
@@ -21,7 +17,7 @@ namespace RecipeShare.Models
         public string AllergyInformation { get; set; }
         public double Rating { get; set; }
         public int PreparationTime { get; set; }
-        [GraphQLDescription("The time it takes to cook the recipe.")]
+        // [GraphQLDescription("The time it takes to cook the recipe.")]
         public int CookTime { get; set; }
         public double Serves { get; set; }
         public string ImageUrl { get; set; }
@@ -30,7 +26,7 @@ namespace RecipeShare.Models
         public string VideoThumbnailUrl { get; set; }
         public string Notes { get; set; }
         public Guid CategoryId { get; set; }
-        [System.ComponentModel.DataAnnotations.Schema.ForeignKey("CategoryId")]
+        [ForeignKey("CategoryId")]
         public RecipeCategory Category { get; set; }
     }
 }

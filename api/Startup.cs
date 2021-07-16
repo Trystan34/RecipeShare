@@ -1,100 +1,94 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using GraphQL.Server.Ui.Voyager;
+using api.GraphQL;
+using api.GraphQL.Mutation;
+using api.GraphQL.Query;
+using api.GraphQL.Subscription;
+using api.GraphQL.Types;
+using api.Helpers;
+using api.Interfaces;
+using api.Repositories;
+using api.Services;
+using GraphQL;
+using GraphQL.DataLoader;
+using GraphQL.Execution;
+using GraphQL.Server;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
-using RecipeShare.GraphQL;
-using RecipeShare.GraphQL.Types;
-using RecipeShare.Models;
 
-namespace RecipeShare
+namespace api
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IWebHostEnvironment Environment { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var db_server = Environment.GetEnvironmentVariable("DB_SERVER");
-            var db_name = Environment.GetEnvironmentVariable("DB_NAME");
-            var db_user = Environment.GetEnvironmentVariable("DB_USER");
-            var db_password = Environment.GetEnvironmentVariable("DB_PASSWORD");
+            services
+                .AddDbContext<AppDbContext>(options =>
+                {
+                    options.UseNpgsql(Configuration["ConnectionString"]);
+                })
+                .AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>))
+                .AddScoped<IFieldService, FieldService>()
+                .AddSingleton<IDocumentExecuter, SubscriptionDocumentExecuter>()
 
-            var connection = $"Server={db_server};Database={db_name};User={db_user};Password={db_password};";
+                .AddScoped<IRecipeHelper, RecipeHelper>()
 
-            services.AddPooledDbContextFactory<AppDbContext>(options => options
-                .UseSqlServer(connection)
-                .EnableServiceProviderCaching(false), poolSize: 32);
+                .AddScoped<MainQuery>()
+                .AddScoped<MainMutation>()
+                .AddSingleton<ISubscriptionServices, SubscriptionServices>()
+                .AddScoped<MainSubscription>()
 
-            // ! Use this when not using Docker.
-            // services.AddPooledDbContextFactory<AppDbContext>(options => options
-            //     .UseSqlServer(Configuration.GetConnectionString("DefaultConnection"))
-            //     .EnableServiceProviderCaching(false), poolSize: 32);
-
-            services.AddGraphQLServer()
-                    .AddQueryType<Query>()
-                    .AddType<RecipeType>()
-                    .AddType<RecipeCategoryType>()
-                    .AddMutationType<Mutation>()
-                    .AddSubscriptionType<Subscription>()
-                    .AddProjections()
-                    .AddSorting()
-                    .AddFiltering()
-                    .AddInMemorySubscriptions();
-
-            services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "RecipeShare", Version = "v1" });
-            });
+                .AddScoped<RecipeType>()
+                .AddScoped<RecipeCategoryType>()
+                .AddScoped<GraphQLSchema>()
+                .AddCors()
+                .AddGraphQL((options, provider) =>
+                {
+                    options.EnableMetrics = Environment.IsDevelopment();
+                    var logger = provider.GetRequiredService<ILogger<Startup>>();
+                    options.UnhandledExceptionDelegate = ctx => logger.LogError("{Error} occurred", ctx.OriginalException.Message);
+                })
+                .AddSystemTextJson(deserializerSettings => { }, serializerSettings => { })
+                .AddErrorInfoProvider(opt => opt.ExposeExceptionStackTrace = Environment.IsDevelopment())
+                .AddDataLoader()
+                .AddWebSockets()
+                .AddGraphTypes(typeof(GraphQLSchema));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            var logger = loggerFactory.CreateLogger<Startup>();
+            logger.LogInformation($"ConnectionString: {Configuration["ConnectionString"]}");
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "RecipeShare v1"));
+                using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+                {
+                    serviceScope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+                }
             }
 
-            app.UseHttpsRedirection();
-
-            app.UseStaticFiles();
-
-            app.UseRouting();
-
-            app.UseAuthorization();
+            app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
             app.UseWebSockets();
-
-            app.UseEndpoints(endpoints =>
-            {
-                // endpoints.MapControllers();
-                endpoints.MapGraphQL();
-            });
-
-            app.UseGraphQLVoyager(new VoyagerOptions()
-            {
-                GraphQLEndPoint = "/graphql"
-            }, "/graphql-voyager");
+            app.UseGraphQLWebSockets<GraphQLSchema>();
+            app.UseGraphQL<GraphQLSchema>();
+            app.UseGraphQLAltair();
         }
     }
 }

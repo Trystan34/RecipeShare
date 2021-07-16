@@ -2,11 +2,11 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using RecipeShare.Models;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using api.Repositories;
 
-namespace RecipeShare.Migrations
+namespace api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -15,72 +15,80 @@ namespace RecipeShare.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.7")
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63)
+                .HasAnnotation("ProductVersion", "5.0.8")
+                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
-            modelBuilder.Entity("RecipeShare.Models.Recipe", b =>
+            modelBuilder.Entity("api.Models.Recipe", b =>
                 {
-                    b.Property<Guid>("RecipeId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AllergyInformation")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("CookTime")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CreationDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("(now())");
 
                     b.Property<string>("ImageThumbnailUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("LongDescription")
                         .HasMaxLength(1500)
-                        .HasColumnType("nvarchar(1500)");
+                        .HasColumnType("character varying(1500)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("PreparationTime")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("Rating")
-                        .HasColumnType("float");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("Serves")
-                        .HasColumnType("float");
+                        .HasColumnType("double precision");
 
                     b.Property<string>("ShortDescription")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("VideoThumbnailUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("VideoUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
-                    b.HasKey("RecipeId");
+                    b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Recipes");
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("recipe", "business");
 
                     b.HasData(
                         new
                         {
-                            RecipeId = new Guid("e7448fc2-1cbe-48ad-a69e-deda6ca38ddb"),
+                            Id = new Guid("e7448fc2-1cbe-48ad-a69e-deda6ca38ddb"),
                             AllergyInformation = "None",
                             CategoryId = new Guid("c32cc263-a7af-4fbd-99a0-aceb57c91f6b"),
                             CookTime = 60,
@@ -93,7 +101,7 @@ namespace RecipeShare.Migrations
                         },
                         new
                         {
-                            RecipeId = new Guid("78edd685-1b1e-4105-a95f-bfafa2ef05a6"),
+                            Id = new Guid("78edd685-1b1e-4105-a95f-bfafa2ef05a6"),
                             AllergyInformation = "Gluten",
                             CategoryId = new Guid("8223c37b-4ca4-4d14-8e9f-027e147e9642"),
                             CookTime = 40,
@@ -109,56 +117,60 @@ namespace RecipeShare.Migrations
                         });
                 });
 
-            modelBuilder.Entity("RecipeShare.Models.RecipeCategory", b =>
+            modelBuilder.Entity("api.Models.RecipeCategory", b =>
                 {
-                    b.Property<Guid>("CategoryId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("CategoryName")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                    b.Property<DateTime?>("CreationDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("(now())");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.HasKey("CategoryId");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
-                    b.ToTable("RecipeCategories");
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("recipe_category", "business");
 
                     b.HasData(
                         new
                         {
-                            CategoryId = new Guid("c32cc263-a7af-4fbd-99a0-aceb57c91f6b"),
-                            CategoryName = "Roast"
+                            Id = new Guid("c32cc263-a7af-4fbd-99a0-aceb57c91f6b"),
+                            Name = "Roast"
                         },
                         new
                         {
-                            CategoryId = new Guid("8223c37b-4ca4-4d14-8e9f-027e147e9642"),
-                            CategoryName = "Pies"
+                            Id = new Guid("8223c37b-4ca4-4d14-8e9f-027e147e9642"),
+                            Name = "Pies"
                         },
                         new
                         {
-                            CategoryId = new Guid("6bc96ff6-a14c-41d9-b3d6-47c51f2e5198"),
-                            CategoryName = "Stir fry"
+                            Id = new Guid("6bc96ff6-a14c-41d9-b3d6-47c51f2e5198"),
+                            Name = "Stir fry"
                         });
                 });
 
-            modelBuilder.Entity("RecipeShare.Models.Recipe", b =>
+            modelBuilder.Entity("api.Models.Recipe", b =>
                 {
-                    b.HasOne("RecipeShare.Models.RecipeCategory", "Category")
-                        .WithMany("Recipes")
+                    b.HasOne("api.Models.RecipeCategory", "Category")
+                        .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("RecipeShare.Models.RecipeCategory", b =>
-                {
-                    b.Navigation("Recipes");
                 });
 #pragma warning restore 612, 618
         }
