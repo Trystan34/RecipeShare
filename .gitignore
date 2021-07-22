@@ -82,3 +82,4 @@ _[Ss]cripts
 .vscode
 .env
 *.txt
+*-lock.json

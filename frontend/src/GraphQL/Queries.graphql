@@ -1,0 +1,10 @@
+query GET_RECIPES {
+  recipes {
+    id
+    name
+    category {
+      id
+      name
+    }
+  }
+}
