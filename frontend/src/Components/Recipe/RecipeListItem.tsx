@@ -1,5 +1,5 @@
 import * as React from "react";
-import { StyleSheet, View, Image } from "react-native";
+import { StyleSheet, View, Image, useWindowDimensions } from "react-native";
 import {
   Surface,
   Title,
@@ -14,8 +14,17 @@ interface IRecipeListItemProps {
 }
 
 const RecipeListItem = (props: IRecipeListItemProps) => {
+  const dimensions = useWindowDimensions();
+
   return (
-    <TouchableRipple onPress={() => props.onPress && props.onPress(props.id)}>
+    <TouchableRipple
+      onPress={() => props.onPress && props.onPress(props.id)}
+      style={{
+        width: `${dimensions.width >= 768 ? "60%" : "100%"}`,
+        paddingBottom: "1rem",
+        alignSelf: "center",
+      }}
+    >
       <Surface style={styles.container}>
         <View style={styles.topRow}>
           <View>

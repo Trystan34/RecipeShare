@@ -1,5 +1,16 @@
-query GET_RECIPES {
+query GetRecipes {
   recipes {
+    id
+    name
+    category {
+      id
+      name
+    }
+  }
+}
+
+query GetRecipe($id: Guid) {
+  recipes(id: $id) {
     id
     name
     category {

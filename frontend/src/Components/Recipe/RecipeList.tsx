@@ -4,12 +4,7 @@ import { FlatList, View } from "react-native";
 import { Recipe } from "../../Types";
 import { StyleSheet } from "react-native";
 import { RecipeListItem } from "../../Components/Recipe";
-import { useQuery } from "@apollo/client";
-import { QueryManager } from "../../GraphQL";
-import {
-  Get_RecipesDocument,
-  useGet_RecipesQuery,
-} from "../../generated/graphql";
+import { useGetRecipesQuery } from "../../GraphQL/graphql";
 
 type RecipeProps = React.ComponentProps<typeof RecipeListItem>;
 
@@ -28,7 +23,10 @@ interface IRecipeListProps {
 const RecipeList: React.FC<IRecipeListProps> = ({ navigation }) => {
   const theme = useTheme();
 
-  const { data, error, loading } = useGet_RecipesQuery();
+  const { data, error, loading } = useGetRecipesQuery();
+  // const { data, error, loading } = useGetRecipeQuery({
+  //   variables: { id: "e7448fc2-1cbe-48ad-a69e-deda6ca38ddb" },
+  // });
 
   if (error) {
     console.log("Error getting recipes", error);
@@ -59,18 +57,20 @@ const RecipeList: React.FC<IRecipeListProps> = ({ navigation }) => {
       ) : (
         <>
           {data && (
-            <FlatList
-              contentContainerStyle={{
-                backgroundColor: theme.colors.background,
-              }}
-              style={{ backgroundColor: theme.colors.background }}
-              data={recipeData}
-              renderItem={renderItem}
-              keyExtractor={keyExtractor}
-              ItemSeparatorComponent={() => (
-                <View style={{ height: StyleSheet.hairlineWidth }} />
-              )}
-            />
+            <View style={{ flex: 1, justifyContent: "center" }}>
+              <FlatList
+                contentContainerStyle={{
+                  backgroundColor: theme.colors.background,
+                }}
+                style={{ backgroundColor: theme.colors.background }}
+                data={recipeData}
+                renderItem={renderItem}
+                keyExtractor={keyExtractor}
+                ItemSeparatorComponent={() => (
+                  <View style={{ height: StyleSheet.hairlineWidth }} />
+                )}
+              />
+            </View>
           )}
         </>
       )}

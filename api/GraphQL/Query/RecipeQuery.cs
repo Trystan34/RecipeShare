@@ -15,18 +15,30 @@ namespace api.GraphQL.Query
         {
             objectGraph.Field<ListGraphType<RecipeType>>("recipes",
             arguments: new QueryArguments(
+                new QueryArgument<GuidGraphType> { Name = "id" },
                 new QueryArgument<StringGraphType> { Name = "name" }
             ),
             resolve: context =>
             {
+                var recipeId = context.GetArgument<Guid>("id");
                 var recipeName = context.GetArgument<string>("name");
 
                 var recipeRepository = (IGenericRepository<Recipe>)sp.GetService(typeof(IGenericRepository<Recipe>));
                 var baseQuery = recipeRepository.GetAll();
-                var name = context.GetArgument<string>("name");
-                if (name != default(string))
+
+                if (recipeId != default(Guid) && recipeName != default(string))
                 {
-                    return baseQuery.Where(w => w.Name.Contains(name));
+                    return baseQuery.Where(r => r.Id.Equals(recipeId) && r.Name.Contains(recipeName));
+                }
+
+                if (recipeId != default(Guid))
+                {
+                    return baseQuery.Where(r => r.Id.Equals(recipeId));
+                }
+
+                if (recipeName != default(string))
+                {
+                    return baseQuery.Where(r => r.Name.Contains(recipeName));
                 }
                 return baseQuery.ToList();
             });
