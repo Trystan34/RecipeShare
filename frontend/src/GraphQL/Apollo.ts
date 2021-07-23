@@ -1,3 +1,4 @@
+import fetch from "cross-fetch";
 import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
 // import { setContext } from '@apollo/link-context';
 
@@ -22,6 +23,7 @@ const asyncAuthLink = setContext(async () => {
 
 const httpLink = new HttpLink({
   uri: GRAPHQL_API_URL,
+  fetch,
 });
 
 const apolloClient = new ApolloClient({
